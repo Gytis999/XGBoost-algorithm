@@ -1,0 +1,139 @@
+Collecting vincent
+  Downloading https://files.pythonhosted.org/packages/11/bf/a12ecaa21a2e376a16de67e09f64a38a4acd95e04e5dc35ad2f13a6f0bfd/vincent-0.4.4.tar.gz
+Requirement already satisfied: pandas in /usr/local/lib/python3.7/dist-packages (from vincent) (1.1.5)
+Requirement already satisfied: pytz>=2017.2 in /usr/local/lib/python3.7/dist-packages (from pandas->vincent) (2018.9)
+Requirement already satisfied: numpy>=1.15.4 in /usr/local/lib/python3.7/dist-packages (from pandas->vincent) (1.19.5)
+Requirement already satisfied: python-dateutil>=2.7.3 in /usr/local/lib/python3.7/dist-packages (from pandas->vincent) (2.8.1)
+Requirement already satisfied: six>=1.5 in /usr/local/lib/python3.7/dist-packages (from python-dateutil>=2.7.3->pandas->vincent) (1.15.0)
+Building wheels for collected packages: vincent
+  Building wheel for vincent (setup.py) ... done
+  Created wheel for vincent: filename=vincent-0.4.4-cp37-none-any.whl size=35172 sha256=c5e2494cf05c85a29bc2905cde964ecfaeb14b7ed0a3d3f8192c14988f6798e6
+  Stored in directory: /root/.cache/pip/wheels/4c/0d/8a/65f34c765c6094a71cce3e42a49a26533eef61695e9b505f03
+Successfully built vincent
+Installing collected packages: vincent
+Successfully installed vincent-0.4.4
+
+import pandas as pd
+import xgboost as xgb
+from sklearn.metrics import mean_squared_error
+import numpy as np
+import folium
+import vincent
+import altair as alt
+
+v = Visual()
+data1 = Data().get_all_data('R150 Wind 5ms 90 degrees (2).xls')
+data2 = Data().get_all_data('R150 Wind 5ms 60 degrees (2).xls')
+#data3 = Data().get_all_data('R150 Wind 5ms 30 degrees (2).xls')
+data4 = Data().get_all_data('R150 Wind 5ms 0 degrees (2).xls')
+data5 = Data().get_all_data('R150 Wind 5ms 120 degrees (2).xls')
+data6 = Data().get_all_data('R150 Wind 5ms 150 degrees (2).xls')
+data7 = Data().get_all_data('R150 Wind 5ms 180 degrees (2).xls')
+data8 = Data().get_all_data('R175 Wind 5ms 90 degrees (2).xls')
+data9 = Data().get_all_data('R175 Wind 5ms 60 degrees (2).xls')
+data10 = Data().get_all_data('R175 Wind 5ms 30 degrees (2).xls')
+data11 = Data().get_all_data('R175 Wind 5ms 0 degrees (2).xls')
+data12 = Data().get_all_data('R175 Wind 5ms 120 degrees (2).xls')
+data13 = Data().get_all_data('R175 Wind 5ms 150 degrees (2).xls')
+data14 = Data().get_all_data('R175 Wind 5ms 180 degrees (2).xls')
+
+
+pre_frame = pd.concat([data1, data2, data3, data4, data5, data6, data7, data8 data9, data10, data11, data12, data13, data14]) #### Cia deti daugiau duomenu
+frames = [pre_frame, pre_frame.shift(1).add_suffix('_2'), pre_frame.shift(1).add_suffix('_3'), pre_frame.shift(1).add_suffix('_4'), pre_frame.shift(1).add_suffix('_5'), pre_frame.shift(1).add_suffix('_6')]
+data =  pd.concat(frames, axis=1)
+data.head()
+
+# X, y = data[['wind_speed', 'wind_dir','Aukštis','Greitis','Ilguma','Platuma']].iloc[:],data['R paklaida (km)'].iloc[:]
+
+X, y = data.drop(['R paklaida (km)','R paklaida (km)_2','R paklaida (km)_3','R paklaida (km)_4','R paklaida (km)_5','R paklaida (km)_6',
+                  'Laikas','Laikas_2', 'Laikas_3', 'Laikas_4', 'Laikas_5', 'Laikas_6', 
+                  'Spindulys (km)', 'Spindulys (km)_2', 'Spindulys (km)_3', 'Spindulys (km)_4' ,'Spindulys (km)_5', 'Spindulys (km)_6',
+                  'Unnamed: 0','temp','wind_speed', 'wind_dir', 'Platuma', 'Ilguma', 'Aukštis', 'Greitis', 'Unnamed: 9', 'Unnamed: 10', 'Kursas', 'Unnamed: 12', 'Unnamed: 13', 'Unnamed: 14','Centrinės koordinatės', 54.66677, 25.51785,], 
+                 axis=1),data['R paklaida (km)']
+
+from sklearn.model_selection import train_test_split
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=1)
+
+xg_reg = xgb.XGBRegressor(objective ='reg:linear', eval_metric='auc', colsample_bytree = 0.6, learning_rate = 0.6,
+                max_depth = 64, alpha = 0.01, n_estimators = 30, gamma=0)
+
+# # Fitting Random Forest Regression to the dataset
+# # import the regressor
+# from sklearn.ensemble import RandomForestRegressor
+  
+#  # create regressor object
+# regressor = RandomForestRegressor(n_estimators = 100, random_state = 0)
+
+# X_train2 = X_train.fillna(0) 
+# X_test2 = X_test.fillna(0)
+# y_train2 = y_train.fillna(0)
+# y_test2 = y_test.fillna(0)
+
+# # fit the regressor with x and y data
+# regressor.fit(X_train2, y_train2)
+
+# preds_forest = regressor.predict(X_test2)
+
+xg_reg.fit(X_train,y_train)
+
+preds = xg_reg.predict(X_test)
+
+rmse = np.sqrt(mean_squared_error(y_test, preds))
+EPSILON =  1e-10 
+mae = np.mean(y_test - preds)
+maep = np.mean(np.sqrt((np.square(y_test) - np.square(preds)))/y_test + EPSILON)*100
+rmspe = (np.mean(np.sqrt(np.square((y_test - preds) / (y_test + EPSILON))))) * 100
+print("RMSE: %f" % (rmse))
+print("RMSPE: %f procent" % (rmspe))
+print("MAE %f" % (mae))
+print("MAEP %f percent" % (maep))
+
+import matplotlib
+import matplotlib.pyplot as plt
+plt.scatter(y_test,preds, c='r', s=0.3)
+plt.xlabel('Tikri duomenys')
+plt.ylabel('Spėjimo duomenys')
+
+plt.hist((y_test-preds), color='r', bins=720)
+plt.xlabel('RMSE vertės (km)')
+plt.ylabel('Spėjimų kiekis')
+plt.show()
+
+data0 = Data().get_all_data('R200 Wind 5ms 180 degrees (2).xls')
+
+pre_frame2 = pd.concat([data0]) #### Cia deti daugiau duomenu
+frames2 = [pre_frame2, pre_frame2.shift(1).add_suffix('_2'), pre_frame2.shift(1).add_suffix('_3'), pre_frame2.shift(1).add_suffix('_4'), pre_frame2.shift(1).add_suffix('_5'), pre_frame2.shift(1).add_suffix('_6')]
+data02 =  pd.concat(frames2, axis=1)
+
+X2, y2 = data02.drop(['R paklaida (km)','R paklaida (km)_2','R paklaida (km)_3','R paklaida (km)_4','R paklaida (km)_5','R paklaida (km)_6',
+                  'Laikas','Laikas_2', 'Laikas_3', 'Laikas_4', 'Laikas_5', 'Laikas_6', 
+                  'Spindulys (km)', 'Spindulys (km)_2', 'Spindulys (km)_3', 'Spindulys (km)_4' ,'Spindulys (km)_5', 'Spindulys (km)_6',
+                  'Unnamed: 0','temp','wind_speed', 'wind_dir', 'Platuma', 'Ilguma', 'Aukštis', 'Greitis', 'Unnamed: 9', 'Unnamed: 10', 'Kursas', 'Unnamed: 12', 'Unnamed: 13', 'Unnamed: 14','Centrinės koordinatės', 54.66677, 25.51785,], 
+                 axis=1),data02['R paklaida (km)']
+
+X_train2, X_test2, y_train2, y_test2 = train_test_split(X2, y2, test_size=0.99, random_state=1)
+
+preds2 = xg_reg.predict(X_test2)
+
+rmse2 = np.sqrt(mean_squared_error(y_test2, preds2))
+EPSILON =  1e-10 
+mae2 = np.mean(y_test2 - preds2)
+maep2 = np.mean(np.sqrt((np.square(y_test2) - np.square(preds2)))/y_test2 + EPSILON)*100
+rmspe2 = (np.mean(np.sqrt(np.square((y_test2 - preds2) / (y_test2 + EPSILON))))) * 100
+print("RMSE: %f" % (rmse2))
+print("RMSPE: %f procent" % (rmspe2))
+print("MAE %f" % (mae2))
+print("MAEP %f percent" % (maep2))
+
+import matplotlib
+import matplotlib.pyplot as plt
+plt.scatter(y_test2,preds2, c='b', s=0.3)
+plt.xlabel('Tikri duomenys')
+plt.ylabel('Spėjimo duomenys')
+
+import matplotlib
+import matplotlib.pyplot as plt
+plt.scatter(y_test,preds, c='r', s=0.3)
+plt.xlabel('Tikri duomenys')
+plt.ylabel('Spėjimo duomenys')
