@@ -137,3 +137,42 @@ import matplotlib.pyplot as plt
 plt.scatter(y_test,preds, c='r', s=0.3)
 plt.xlabel('Tikri duomenys')
 plt.ylabel('Spėjimo duomenys')
+
+# Neural network
+
+>>> # X, y = data[['wind_speed', 'wind_dir','Aukštis','Greitis','Ilguma','Platuma']].iloc[:],data['R paklaida (km)'].iloc[:]
+
+X, y = data.drop(['R paklaida (km)','R paklaida (km)_2','R paklaida (km)_3','R paklaida (km)_4','R paklaida (km)_5','R paklaida (km)_6',
+                  'Laikas','Laikas_2', 'Laikas_3', 'Laikas_4', 'Laikas_5', 'Laikas_6', 
+                  'Spindulys (km)', 'Spindulys (km)_2', 'Spindulys (km)_3', 'Spindulys (km)_4' ,'Spindulys (km)_5', 'Spindulys (km)_6',
+                  'Unnamed: 0','temp','wind_speed', 'wind_dir', 'Platuma', 'Ilguma', 'Aukštis', 'Greitis', 'Unnamed: 9', 'Unnamed: 10', 'Kursas', 'Unnamed: 12', 'Unnamed: 13', 'Unnamed: 14','Centrinės koordinatės', 54.66677, 25.51785,], 
+                 axis=1),data['R paklaida (km)']
+
+from sklearn.neural_network import MLPRegressor
+
+X_train3, X_test3, y_train3, y_test3 = train_test_split(X, y, test_size=0.1, random_state=1)
+
+from sklearn.neural_network import MLPRegressor
+from sklearn.datasets import make_regression
+from sklearn.model_selection import train_test_split
+X, y = make_regression(n_samples=1100, random_state=150)
+X_train3, X_test3, y_train3, y_test3 = train_test_split(X, y,
+...                                                     random_state=1)
+
+regr = MLPRegressor(random_state=1, max_iter=500).fit(X_train3, y_train3)
+regr.predict(X_test3[:2])
+# array([-0.9, -7.1])
+regr.score(X_test3, y_test3)
+
+preds = regr.predict(X_test3)
+
+
+rmse = np.sqrt(mean_squared_error(y_test3, preds))
+EPSILON =  1e-10 
+mae = np.mean(y_test3 - preds)
+maep = np.mean(np.sqrt((np.square(y_test3) - np.square(preds)))/y_test3 + EPSILON)*100
+rmspe = (np.mean(np.sqrt(np.square((y_test3 - preds) / (y_test3 + EPSILON))))) * 100
+print("RMSE: %f" % (rmse))
+print("RMSPE: %f procent" % (rmspe))
+print("MAE %f" % (mae))
+print("MAEP %f percent" % (maep))
